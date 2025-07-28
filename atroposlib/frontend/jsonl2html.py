@@ -46,6 +46,7 @@ def create_html_for_group(group_data, index):
     """Generates HTML snippet for a single group."""
     messages = group_data.get("messages", [])
     scores = group_data.get("scores", [])
+    metadata = group_data.get("metadata")  # This can be a list or not
 
     if len(messages) != len(scores):
         print(
@@ -65,6 +66,26 @@ def create_html_for_group(group_data, index):
         )
         score_class = get_score_class(score)
         item_id = f"group-{index}-item-{i}"
+
+        metadata_html = ""
+        # Only process metadata if it's a list (for per-rollout display)
+        if isinstance(metadata, list) and i < len(metadata):
+            item_metadata = metadata[i]
+            if item_metadata:
+                if not isinstance(item_metadata, str):
+                    metadata_str = json.dumps(item_metadata, indent=2)
+                else:
+                    metadata_str = item_metadata
+                escaped_metadata = html.escape(metadata_str)
+                metadata_html = textwrap.dedent(
+                    f"""\
+                    <div class="metadata-block">
+                        <h5>Metadata</h5>
+                        <pre><code>{escaped_metadata}</code></pre>
+                    </div>
+                """
+                )
+
         items_html += textwrap.dedent(
             f"""\
             <div class="item {score_class}" id="{item_id}">
@@ -73,6 +94,7 @@ def create_html_for_group(group_data, index):
                     {rendered_markdown}
                 </div>
                 <p><strong>Reward:</strong> {html.escape(str(score))}</p>
+                {metadata_html}
             </div>
         """
         )
